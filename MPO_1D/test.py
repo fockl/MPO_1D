@@ -2,6 +2,7 @@ import numpy as np
 from Physical_operators import *
 from MPO_1D import MPO_1D
 
+#exact Sz for check
 def exact_Sz_average(t, calculate_index, h, J, V):
   if(calculate_index == 1):
     H_exact = np.zeros((8, 8), dtype=np.complex64)
@@ -36,12 +37,12 @@ if __name__ == '__main__':
   D=4
   J=0.5
   h=1.0
-  V=-1.0
+  V=1.0
   T_init=-10
   T_end=0 + 1.0E-3
   T_delta=1.0E-3
 
-  TEST = MPO_1D(N=N, D=D, T_delta=T_delta)
+  TEST = MPO_1D(N=N, D=D, T_delta=T_delta, H_self_kind=3)
 
   print("initialize density matrix")
   TEST.initialize_density_matrix()
@@ -54,7 +55,9 @@ if __name__ == '__main__':
   f.close()
 
   TEST.initialize_H_self()
-  TEST.add_H_self(Sx, h)
+  TEST.add_H_self(Sx, h, index=0)
+  TEST.add_H_self(Sx, h, index=1)
+  TEST.add_H_self(Sx, h, index=2)
   TEST.initialize_K_self()
 
   TEST.initialize_H_2body()
@@ -66,7 +69,7 @@ if __name__ == '__main__':
   while(t < T_end):
     #operate 1-body interactions
     for n in range(N):
-      TEST.operate_self(n)
+      TEST.operate_self(n, Liouvillian_index=n)
 
     #operate 2-body interactions
     for n in range(int(N/2)):
