@@ -5,27 +5,27 @@ import copy
 from Physical_operators import *
 
 class MPO_1D:
-  def __init__(self, N=2, D=10, T_delta=1.0E-3, H_self_kind=1, K_self_kind=1, H_2body_kind=1, H_3body_kind=1):
+  def __init__(self, N, D, T_delta, H_1body_kind=1, K_1body_kind=1, H_2body_kind=1, H_3body_kind=1):
     self.T_delta = T_delta
     self.N = N
     self.D = D
 
-    if(K_self_kind!=1):
-      raise NameError("K_self_kind must be 1 for now")
+    if(K_1body_kind!=1):
+      raise NameError("K_1body_kind must be 1 for now")
 
     self.left_edge_vector = np.ones(self.D, dtype=np.complex64)/np.sqrt(self.D)
     self.right_edge_vector = np.ones(self.D, dtype=np.complex64)/np.sqrt(self.D)
 
-    self.H_self_kind = H_self_kind
-    self.K_self_kind = K_self_kind
+    self.H_1body_kind = H_1body_kind
+    self.K_1body_kind = K_1body_kind
     self.H_2body_kind = H_2body_kind
     self.H_3body_kind = H_3body_kind
 
-    self.H_self = np.zeros(((H_self_kind, 2, 2)), dtype=np.complex64)
-    self.K_self = np.zeros(((K_self_kind, 2, 2)), dtype=np.complex64)
+    self.H_1body = np.zeros(((H_1body_kind, 2, 2)), dtype=np.complex64)
+    self.K_1body = np.zeros(((K_1body_kind, 2, 2)), dtype=np.complex64)
     self.H_2body = np.zeros(((H_2body_kind, 4, 4)), dtype=np.complex64)
     self.H_3body = np.zeros(((H_3body_kind, 8, 8)), dtype=np.complex64)
-    self.L_self = np.zeros(((((H_self_kind, 2, 2, 2, 2)))), dtype=np.complex64)
+    self.L_self = np.zeros(((((H_1body_kind, 2, 2, 2, 2)))), dtype=np.complex64)
     self.L_2body = np.zeros(((((H_2body_kind, 4, 4, 4, 4)))), dtype=np.complex64)
     self.L_3body = np.zeros(((((H_3body_kind, 8, 8, 8, 8)))), dtype=np.complex64)
 
@@ -33,39 +33,39 @@ class MPO_1D:
 
   def __Liouvillian_self(self, index=-1):
     if(index<0):
-      for loop_index in range(self.H_self_kind):
+      for loop_index in range(self.H_1body_kind):
         self.L_self[loop_index] = np.zeros((((2, 2, 2, 2))), dtype=np.complex64)
-        H_transpose = np.transpose(self.H_self[loop_index])
-        K_transpose = np.transpose(self.K_self[0])
-        K_conjugate = np.conjugate(self.K_self[0])
+        H_transpose = np.transpose(self.H_1body[loop_index])
+        K_transpose = np.transpose(self.K_1body[0])
+        K_conjugate = np.conjugate(self.K_1body[0])
         K_dagger = np.conjugate(K_transpose)
-        K1 = np.dot(K_dagger, self.K_self[0])
+        K1 = np.dot(K_dagger, self.K_1body[0])
         K2 = np.dot(K_conjugate, K_transpose)
 
         for i in range(2):
           for j in range(2):
             for k in range(2):
               for l in range(2):
-                self.L_self[loop_index][i][j][k][l] = -1j*(self.H_self[loop_index][i][k]*I2[j][l] - I2[i][k]*H_transpose[j][l])
-                self.L_self[loop_index][i][j][k][l] = self.L_self[loop_index][i][j][k][l] + self.K_self[0][i][k]*K_conjugate[j][l]
+                self.L_self[loop_index][i][j][k][l] = -1j*(self.H_1body[loop_index][i][k]*I2[j][l] - I2[i][k]*H_transpose[j][l])
+                self.L_self[loop_index][i][j][k][l] = self.L_self[loop_index][i][j][k][l] + self.K_1body[0][i][k]*K_conjugate[j][l]
                 self.L_self[loop_index][i][j][k][l] = self.L_self[loop_index][i][j][k][l] - 0.5*K1[i][k]*I2[j][l] - 0.5*I2[i][k]*K2[j][l]
     else:
-      if(index >= self.H_self_kind):
-        raise NameError("__Liouvillian_self : index %d must be smaller than %d" % (index, self.H_self_kind))
+      if(index >= self.H_1body_kind):
+        raise NameError("__Liouvillian_self : index %d must be smaller than %d" % (index, self.H_1body_kind))
       self.L_self[index] = np.zeros((((2, 2, 2, 2))), dtype=np.complex64)
-      H_transpose = np.transpose(self.H_self[index])
-      K_transpose = np.transpose(self.K_self[0])
-      K_conjugate = np.conjugate(self.K_self[0])
+      H_transpose = np.transpose(self.H_1body[index])
+      K_transpose = np.transpose(self.K_1body[0])
+      K_conjugate = np.conjugate(self.K_1body[0])
       K_dagger = np.conjugate(K_transpose)
-      K1 = np.dot(K_dagger, self.K_self[0])
+      K1 = np.dot(K_dagger, self.K_1body[0])
       K2 = np.dot(K_conjugate, K_transpose)
 
       for i in range(2):
         for j in range(2):
           for k in range(2):
             for l in range(2):
-              self.L_self[index][i][j][k][l] = -1j*(self.H_self[index][i][k]*I2[j][l] - I2[i][k]*H_transpose[j][l])
-              self.L_self[index][i][j][k][l] = self.L_self[index][i][j][k][l] + self.K_self[0][i][k]*K_conjugate[j][l]
+              self.L_self[index][i][j][k][l] = -1j*(self.H_1body[index][i][k]*I2[j][l] - I2[i][k]*H_transpose[j][l])
+              self.L_self[index][i][j][k][l] = self.L_self[index][i][j][k][l] + self.K_1body[0][i][k]*K_conjugate[j][l]
               self.L_self[index][i][j][k][l] = self.L_self[index][i][j][k][l] - 0.5*K1[i][k]*I2[j][l] - 0.5*I2[i][k]*K2[j][l]
 
   def __Liouvillian_2body(self, index=-1):
@@ -114,48 +114,48 @@ class MPO_1D:
             for l in range(8):
               self.L_3body[index][i][j][k][l] = -1j*(self.H_3body[index][i][k]*I8[j][l] - I8[i][k]*H_transpose[j][l])
 
-  def initialize_H_self(self, index=-1):
+  def initialize_H_1body(self, index=-1):
     if(index<0):
-      for loop_index in range(self.H_self_kind):
-        self.H_self[loop_index] = np.zeros((2, 2), dtype=np.complex64)
+      for loop_index in range(self.H_1body_kind):
+        self.H_1body[loop_index] = np.zeros((2, 2), dtype=np.complex64)
     else:
-      if(index>=self.H_self_kind):
-        raise NameError("initialize_H_self : index %d must be smaller than H_self_kind %d" % (index, self.H_self_kind))
-      self.H_self[index] = np.zeros((2, 2), dtype=np.complex64)
+      if(index>=self.H_1body_kind):
+        raise NameError("initialize_H_1body : index %d must be smaller than H_1body_kind %d" % (index, self.H_1body_kind))
+      self.H_1body[index] = np.zeros((2, 2), dtype=np.complex64)
     self.__Liouvillian_self(index)
 
-  def add_H_self(self, H_self, coef=1.0, index=0):
-    if(index<0 or index>=self.H_self_kind):
-      raise NameError("add_H_self : index %d must be smaller than H_self_kind %d" % (index, self.H_self_kind))
-    if(H_self.shape != (2, 2)):
-      raise NameError("H_self type should be (2, 2)")
+  def add_H_1body(self, H_1body, coef=1.0, index=0):
+    if(index<0 or index>=self.H_1body_kind):
+      raise NameError("add_H_1body : index %d must be smaller than H_1body_kind %d" % (index, self.H_1body_kind))
+    if(H_1body.shape != (2, 2)):
+      raise NameError("H_1body type should be (2, 2)")
     H_tmp = np.zeros((2, 2), dtype=np.complex64)
     for i0 in range(2):
       for i1 in range(2):
-        H_tmp[i0][i1] = H_self[i0][i1]
-    self.H_self[index] = self.H_self[index] + coef*H_tmp
+        H_tmp[i0][i1] = H_1body[i0][i1]
+    self.H_1body[index] = self.H_1body[index] + coef*H_tmp
     self.__Liouvillian_self(index)
 
-  def initialize_K_self(self, index=-1):
+  def initialize_K_1body(self, index=-1):
     if(index<0):
-      for loop_index in range(self.K_self_kind):
-        self.K_self[loop_index] = np.zeros((2, 2), dtype=np.complex64)
+      for loop_index in range(self.K_1body_kind):
+        self.K_1body[loop_index] = np.zeros((2, 2), dtype=np.complex64)
     else:
-      if(index>=self.K_self_kind):
-        raise NameError("initialize_K_self : index %d must be smaller than K_self_kind %d" % (index, self.K_self_kind))
-      self.K_self[index] = np.zeros((2, 2), dtype=np.complex64)
+      if(index>=self.K_1body_kind):
+        raise NameError("initialize_K_1body : index %d must be smaller than K_1body_kind %d" % (index, self.K_1body_kind))
+      self.K_1body[index] = np.zeros((2, 2), dtype=np.complex64)
     self.__Liouvillian_self(index)
 
-  def add_K_self(self, K_self, coef=1.0, index=0):
-    if(index<0 or index>=self.K_self_kind):
-      raise NameError("add_K_self : index %d must be smaller than K_self_kind %d" % (index, self.K_self_kind))
-    if(K_self.shape != (2, 2)):
-      raise NameError("K_self type should be (2, 2)")
+  def add_K_1body(self, K_1body, coef=1.0, index=0):
+    if(index<0 or index>=self.K_1body_kind):
+      raise NameError("add_K_1body : index %d must be smaller than K_1body_kind %d" % (index, self.K_1body_kind))
+    if(K_1body.shape != (2, 2)):
+      raise NameError("K_1body type should be (2, 2)")
     K_tmp = np.zeros((2, 2), dtype=np.complex64)
     for i0 in range(2):
       for i1 in range(2):
-        K_tmp[i0][i1] = K_self[i0][i1]
-    self.K_self[index] = self.K_self[index]+ coef*K_tmp
+        K_tmp[i0][i1] = K_1body[i0][i1]
+    self.K_1body[index] = self.K_1body[index]+ coef*K_tmp
     self.__Liouvillian_self()
 
   def initialize_H_2body(self, index=-1):
@@ -292,15 +292,15 @@ class MPO_1D:
       p_product_left[n] = np.dot(p_product_left[n-1], p_set_0[n])
       p_product_right[self.N-1-n] = np.dot(p_set_0[self.N-1-n], p_product_right[self.N-n])
 
-    calc_O = np.zeros(self.N, dtype=np.float64)
+    calc_O = np.zeros(self.N, dtype=np.complex64)
 
-    calc_O[0] = np.dot(np.dot(v_left, p_set_1[0]), p_product_right[1]).real
-    #calc_O[0] = np.trace(np.dot(p_set_1[0], p_product_right[1])).real
+    calc_O[0] = np.dot(np.dot(v_left, p_set_1[0]), p_product_right[1])
+    #calc_O[0] = np.trace(np.dot(p_set_1[0], p_product_right[1]))
     for n in range(1, self.N-1):
-      calc_O[n] = np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1])).real
-      #calc_O[n] = np.trace(np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1]))).real
-    calc_O[self.N-1] = np.dot(p_product_left[self.N-2], np.dot(p_set_1[self.N-1], v_right)).real
-    #calc_O[self.N-1] = np.trace(np.dot(p_product_left[self.N-2], p_set_1[self.N-1])).real
+      calc_O[n] = np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1]))
+      #calc_O[n] = np.trace(np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1])))
+    calc_O[self.N-1] = np.dot(p_product_left[self.N-2], np.dot(p_set_1[self.N-1], v_right))
+    #calc_O[self.N-1] = np.trace(np.dot(p_product_left[self.N-2], p_set_1[self.N-1]))
 
     if(index<0):
       return calc_O
@@ -373,9 +373,9 @@ class MPO_1D:
       calc_tmp = np.dot(calc_tmp, p_set_0[i])
     calc_tmp = np.dot(calc_tmp, p_set_2[dist])
     if(dist+1 < self.N):
-      calc_O_O[0] = np.dot(calc_tmp, p_product_right[dist+1]).real
+      calc_O_O[0] = np.dot(calc_tmp, p_product_right[dist+1])
     elif(dist+1 == self.N):
-      calc_O_O[0] = np.dot(calc_tmp, v_right).real
+      calc_O_O[0] = np.dot(calc_tmp, v_right)
     else:
       raise NameError("calculate_SzSz_correlation : dist+1 = %d > self.N = %d" % (dist+1, self.N))
 
@@ -384,7 +384,7 @@ class MPO_1D:
       for i in range(1, dist):
         calc_tmp = np.dot(calc_tmp, p_set_0[n+i])
       calc_tmp = np.dot(calc_tmp, p_set_2[n+dist])
-      calc_O_O[n] = np.dot(calc_tmp, p_product_right[n+dist+1]).real
+      calc_O_O[n] = np.dot(calc_tmp, p_product_right[n+dist+1])
 
     if(self.N-2-dist >= 0):
       calc_tmp = np.dot(p_product_left[self.N-2-dist], p_set_1[self.N-1-dist])
@@ -395,7 +395,7 @@ class MPO_1D:
     for i in range(1, dist):
       calc_tmp = np.dot(calc_tmp, p_set_0[i+self.N-1-dist])
     calc_tmp = np.dot(calc_tmp, p_set_2[self.N-1])
-    calc_O_O[self.N-1-dist] = np.dot(calc_tmp, v_right).real
+    calc_O_O[self.N-1-dist] = np.dot(calc_tmp, v_right)
 
     if(index<0):
       return calc_O_O
@@ -435,12 +435,12 @@ class MPO_1D:
 
     return p1, p2, p3
 
-  def operate_self(self, particle_index, Liouvillian_index=0):
+  def operate_1body(self, particle_index, Liouvillian_index=0):
     #operate 1-body interactions
     if(particle_index < 0 or particle_index >= self.N):
-      raise NameError("particle_index %d out of range - operate_self" % (particle_index))
-    if(Liouvillian_index < 0 or Liouvillian_index >= self.H_self_kind):
-      raise NameError("Liouvillian_index %d out of range - operate_self" % (Liouvillian_index))
+      raise NameError("particle_index %d out of range - operate_1body" % (particle_index))
+    if(Liouvillian_index < 0 or Liouvillian_index >= self.H_1body_kind):
+      raise NameError("Liouvillian_index %d out of range - operate_1body" % (Liouvillian_index))
     L_self = copy.deepcopy(self.L_self[Liouvillian_index])
     L_self = np.reshape(L_self, (4, 4))
     L_self = I4 + L_self*self.T_delta
@@ -458,6 +458,9 @@ class MPO_1D:
       raise NameError("particle_index %d out of range - operate_2body" % (particle_index2))
     if(Liouvillian_index < 0 or Liouvillian_index >= self.H_2body_kind):
       raise NameError("Liouvillian_index %d out of range - operate_2body" % (Liouvillian_index))
+
+    if(particle_index1+1 != particle_index2):
+      raise NameError("particle_index1 + 1 (%d+1) must be particle_index2 (%d)" % (particle_index1, particle_index2))
 
     L_2body = copy.deepcopy(self.L_2body[Liouvillian_index])
     L_2body = np.reshape(L_2body, (4*4, 4*4))
@@ -492,6 +495,10 @@ class MPO_1D:
       raise NameError("particle_index %d out of range - operate_3body" % particle_index3)
     if(Liouvillian_index < 0 or Liouvillian_index >= self.H_3body_kind):
       raise NameError("Liouvillian_index %d out of range - operate_3body" % (Liouvillian_index))
+    if(particle_index1+1 != particle_index2):
+      raise NameError("particle_index1+1 (%d+1) must be particle_index2 (%d)" % (particle_index1, particle_index2))
+    if(particle_index2+1 != particle_index3):
+      raise NameError("particle_index2+1 (%d+1) must be particle_index3 (%d)" % (particle_index2, particle_index3))
 
     L_3body = copy.deepcopy(self.L_3body[Liouvillian_index])
     L_3body = np.reshape(L_3body, (4*4*4, 4*4*4))
