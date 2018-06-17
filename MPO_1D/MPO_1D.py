@@ -249,7 +249,12 @@ class MPO_1D:
 
     self.normalize()
 
-  def calculate_Sz_average(self):
+  def calculate_expectation_of_1body(self, O=Sz, index=-1):
+    if(index >= self.N):
+      raise NameError("calculate_expectation_of_1body : index %d out of range" % (index))
+    if(O.shape != (2, 2)):
+      raise NameError("operator shape should be (2, 2)")
+    
     p_set_0 = np.zeros(((self.N, self.D, self.D)), dtype=np.complex64)
     p_set_1 = np.zeros(((self.N, self.D, self.D)), dtype=np.complex64)
     for n in range(self.N):
@@ -260,7 +265,7 @@ class MPO_1D:
 
       p_tmp = np.transpose(self.p_set[n], (1, 0, 2, 3))
       p_tmp = np.reshape(p_tmp, (2, (self.D*2*self.D)))
-      p_tmp = np.dot(Sz, p_tmp)
+      p_tmp = np.dot(O, p_tmp)
       p_tmp = np.reshape(p_tmp, (2, self.D, 2, self.D))
       p_tmp = np.transpose(p_tmp, (1, 0, 2, 3))
 
@@ -268,8 +273,6 @@ class MPO_1D:
         for D2 in range(self.D):
           for d in range(2):
             p_set_1[n][D1][D2] = p_set_1[n][D1][D2] + p_tmp[D1][d][d][D2]
-
-    calc_Sz = np.zeros(self.N, dtype=np.complex64)
 
     p_product_left = np.zeros((self.N, self.D), dtype=np.complex64)
     p_product_right = np.zeros((self.N, self.D), dtype=np.complex64)
@@ -289,19 +292,115 @@ class MPO_1D:
       p_product_left[n] = np.dot(p_product_left[n-1], p_set_0[n])
       p_product_right[self.N-1-n] = np.dot(p_set_0[self.N-1-n], p_product_right[self.N-n])
 
-    calc_Sz[0] = np.dot(np.dot(v_left, p_set_1[0]), p_product_right[1])
-    #calc_Sz[0] = np.trace(np.dot(p_set_1[0], p_product_right[1]))
+    calc_O = np.zeros(self.N, dtype=np.float64)
+
+    calc_O[0] = np.dot(np.dot(v_left, p_set_1[0]), p_product_right[1]).real
+    #calc_O[0] = np.trace(np.dot(p_set_1[0], p_product_right[1])).real
     for n in range(1, self.N-1):
-      calc_Sz[n] = np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1]))
-      #calc_Sz[n] = np.trace(np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1])))
-    calc_Sz[self.N-1] = np.dot(p_product_left[self.N-2], np.dot(p_set_1[self.N-1], v_right))
-    #calc_Sz[self.N-1] = np.trace(np.dot(p_product_left[self.N-2], p_set_1[self.N-1]))
+      calc_O[n] = np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1])).real
+      #calc_O[n] = np.trace(np.dot(p_product_left[n-1], np.dot(p_set_1[n], p_product_right[n+1]))).real
+    calc_O[self.N-1] = np.dot(p_product_left[self.N-2], np.dot(p_set_1[self.N-1], v_right)).real
+    #calc_O[self.N-1] = np.trace(np.dot(p_product_left[self.N-2], p_set_1[self.N-1])).real
 
-    sum_Sz = 0.0
+    if(index<0):
+      return calc_O
+    else:
+      return calc_O[index]
+
+  def calculate_expectation_of_2body(self, O1=Sz, O2=Sz, dist=1, index=-1):
+    if(index+dist >= self.N):
+      raise NameError("calculate_expectation_of_2body : index %d with dist %d out of range" % (index, dist))
+    elif(dist < 1):
+      raise NameError("calculate_expectation_of_2body : dist %d must be larger than 0" % (dist))
+    if(O1.shape != (2, 2)):
+      raise NameError("operator O1 should be (2, 2)")
+    if(O2.shape != (2, 2)):
+      raise NameError("operator O2 should be (2, 2)")
+ 
+    p_set_0 = np.zeros(((self.N, self.D, self.D)), dtype=np.complex64)
+    p_set_1 = np.zeros(((self.N, self.D, self.D)), dtype=np.complex64)
+    p_set_2 = np.zeros(((self.N, self.D, self.D)), dtype=np.complex64)
     for n in range(self.N):
-      sum_Sz = sum_Sz + calc_Sz[n].real
+      for D1 in range(self.D):
+        for D2 in range(self.D):
+          for d in range(2):
+            p_set_0[n][D1][D2] = p_set_0[n][D1][D2] + self.p_set[n][D1][d][d][D2]
 
-    return sum_Sz/self.N
+      p_tmp = np.transpose(self.p_set[n], (1, 0, 2, 3))
+      p_tmp = np.reshape(p_tmp, (2, (self.D*2*self.D)))
+      p_tmp = np.dot(O1, p_tmp)
+      p_tmp = np.reshape(p_tmp, (2, self.D, 2, self.D))
+      p_tmp = np.transpose(p_tmp, (1, 0, 2, 3))
+
+      for D1 in range(self.D):
+        for D2 in range(self.D):
+          for d in range(2):
+            p_set_1[n][D1][D2] = p_set_1[n][D1][D2] + p_tmp[D1][d][d][D2]
+
+      p_tmp = np.transpose(self.p_set[n], (1, 0, 2, 3))
+      p_tmp = np.reshape(p_tmp, (2, (self.D*2*self.D)))
+      p_tmp = np.dot(O2, p_tmp)
+      p_tmp = np.reshape(p_tmp, (2, self.D, 2, self.D))
+      p_tmp = np.transpose(p_tmp, (1, 0, 2, 3))
+
+      for D1 in range(self.D):
+        for D2 in range(self.D):
+          for d in range(2):
+            p_set_2[n][D1][D2] = p_set_2[n][D1][D2] + p_tmp[D1][d][d][D2]
+
+    p_product_left = np.zeros((self.N, self.D), dtype=np.complex64)
+    p_product_right = np.zeros((self.N, self.D), dtype=np.complex64)
+
+    #p_product_left = np.zeros(((self.N, self.D, self.D)), dtype=np.complex64)
+    #p_product_right = np.zeros(((self.N, self.D, self.D)), dtype=np.complex64)
+
+    v_left  = copy.deepcopy(self.left_edge_vector)
+    v_right = copy.deepcopy(self.right_edge_vector)
+
+    p_product_left[0] = np.dot(v_left, p_set_0[0])
+    p_product_right[self.N-1] = np.dot(p_set_0[self.N-1], v_right)
+    #p_product_left[0] = p_set_0[0]
+    #p_product_right[self.N-1] = p_set_0[self.N-1]
+
+    for n in range(1, self.N):
+      p_product_left[n] = np.dot(p_product_left[n-1], p_set_0[n])
+      p_product_right[self.N-1-n] = np.dot(p_set_0[self.N-1-n], p_product_right[self.N-n])
+
+    calc_O_O = np.zeros(self.N-dist, dtype=np.float64)
+
+    calc_tmp = np.dot(v_left, p_set_1[0])
+    for i in range(1, dist):
+      calc_tmp = np.dot(calc_tmp, p_set_0[i])
+    calc_tmp = np.dot(calc_tmp, p_set_2[dist])
+    if(dist+1 < self.N):
+      calc_O_O[0] = np.dot(calc_tmp, p_product_right[dist+1]).real
+    elif(dist+1 == self.N):
+      calc_O_O[0] = np.dot(calc_tmp, v_right).real
+    else:
+      raise NameError("calculate_SzSz_correlation : dist+1 = %d > self.N = %d" % (dist+1, self.N))
+
+    for n in range(1, self.N-1-dist):
+      calc_tmp = np.dot(p_product_left[n-1], p_set_1[n])
+      for i in range(1, dist):
+        calc_tmp = np.dot(calc_tmp, p_set_0[n+i])
+      calc_tmp = np.dot(calc_tmp, p_set_2[n+dist])
+      calc_O_O[n] = np.dot(calc_tmp, p_product_right[n+dist+1]).real
+
+    if(self.N-2-dist >= 0):
+      calc_tmp = np.dot(p_product_left[self.N-2-dist], p_set_1[self.N-1-dist])
+    elif(self.N-2-dist == -1):
+      calc_tmp = np.dot(v_left, p_set_1[self.N-1-dist])
+    else:
+      raise NameError("calculate_SzSz_correlation : self.N-2-dist = %d >= -1" % (self.N-2-dist))
+    for i in range(1, dist):
+      calc_tmp = np.dot(calc_tmp, p_set_0[i+self.N-1-dist])
+    calc_tmp = np.dot(calc_tmp, p_set_2[self.N-1])
+    calc_O_O[self.N-1-dist] = np.dot(calc_tmp, v_right).real
+
+    if(index<0):
+      return calc_O_O
+    else:
+      return calc_O_O[index]
 
   def __decompose_L_2body_to_p(self, L):
     p1, S0, p2 = svd(L)
