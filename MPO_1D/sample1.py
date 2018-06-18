@@ -129,9 +129,11 @@ if __name__ == '__main__':
     SzSz1_exact = exact_SzSz_correlation_average(t-T_init, 1, h, J, V, dist=1)
     SzSz2_exact = exact_SzSz_correlation_average(t-T_init, 1, h, J, V, dist=2)
 
+    Entanglement_Entropy = TEST.calculate_entanglement_entropy(1, 1).real
+
     f = open(filename, "a")
-    print("%lf %lf %lf %lf %lf %lf %lf\n" % (t, Sz_ave, Sz_exact, SzSz1_ave, SzSz1_exact, SzSz2_ave, SzSz2_exact))
-    f.write("%lf %lf %lf %lf %lf %lf %lf\n" % (t, Sz_ave, Sz_exact, SzSz1_ave, SzSz1_exact, SzSz2_ave, SzSz2_exact))
+    print("%lf %lf %lf %lf %lf %lf %lf %lf\n" % (t, Sz_ave, Sz_exact, SzSz1_ave, SzSz1_exact, SzSz2_ave, SzSz2_exact, Entanglement_Entropy))
+    f.write("%lf %lf %lf %lf %lf %lf %lf %lf\n" % (t, Sz_ave, Sz_exact, SzSz1_ave, SzSz1_exact, SzSz2_ave, SzSz2_exact, Entanglement_Entropy))
     f.close()
 
     if(np.abs(Sz_ave) > 2.0):

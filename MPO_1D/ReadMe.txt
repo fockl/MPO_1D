@@ -150,6 +150,16 @@ np.array(dtype=np.complex64)/np.complex64 calculate_expectation_of_2body(self, O
     index : calculate expectation value at that site and return complex
             if negative, expectation values are calculated at all sites and return array
 
+np.complex64 calculate_entanglement_entropy(index1, index2):
+  explanation:
+    calculate entanglement entropy between index1 and index2
+
+  variable:
+    index1, index2 : particle indices. ith particles such that index1 <= i <= index2 are considered to calculate reduced density matrix
+
+  optional:
+
+
 void operate_1body(particle_index, Liouvillian_index=0)
   explanation:
     operate 1body liouvillian at particle_index site

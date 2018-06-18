@@ -366,7 +366,7 @@ class MPO_1D:
       p_product_left[n] = np.dot(p_product_left[n-1], p_set_0[n])
       p_product_right[self.N-1-n] = np.dot(p_set_0[self.N-1-n], p_product_right[self.N-n])
 
-    calc_O_O = np.zeros(self.N-dist, dtype=np.float64)
+    calc_O_O = np.zeros(self.N-dist, dtype=np.complex64)
 
     calc_tmp = np.dot(v_left, p_set_1[0])
     for i in range(1, dist):
@@ -401,6 +401,59 @@ class MPO_1D:
       return calc_O_O
     else:
       return calc_O_O[index]
+
+  def calculate_entanglement_entropy(self, index1, index2):
+    if(index1<0 or index1>=self.N):
+      raise NameError("calculate_entanglement_entropy : index1 out of range")
+    if(index2<0 or index2>=self.N):
+      raise NameError("calculate_entanglement_entropy : index2 out of range")
+    if(index1>index2):
+      raise NameError("calculate_entanglement_entropy : index2 %d must be larger than or equal to index 1 %d" % (index2, index1))
+
+    v_left  = copy.deepcopy(self.left_edge_vector)
+    v_right = copy.deepcopy(self.right_edge_vector)
+
+    for n in range(index1):
+      p_tmp = np.zeros((self.D, self.D), dtype=np.complex64)
+      for D1 in range(self.D):
+        for D2 in range(self.D):
+          for d in range(2):
+            p_tmp[D1][D2] = p_tmp[D1][D2] + self.p_set[n][D1][d][d][D2]
+
+      v_left = np.dot(v_left, p_tmp)
+
+    for n in range(self.N-1-index2):
+      p_tmp = np.zeros((self.D, self.D), dtype=np.complex64)
+      for D1 in range(self.D):
+        for D2 in range(self.D):
+          for d in range(2):
+            p_tmp[D1][D2] = p_tmp[D1][D2] + self.p_set[self.N-1-n][D1][d][d][D2]
+      v_right = np.dot(p_tmp, v_right)
+
+    p_tmp = copy.deepcopy(self.p_set[index1])
+    p_tmp = np.reshape(p_tmp, (self.D, 2*2*self.D))
+    p_local = np.dot(v_left, p_tmp)
+    num_of_comp = 2
+    p_local = np.reshape(p_local, (num_of_comp*num_of_comp, self.D))
+    for n in range(index1+1, index2+1):
+      p_tmp = copy.deepcopy(self.p_set[n])
+      p_tmp = np.reshape(p_tmp, (self.D, 2*2*self.D))
+      p_local = np.dot(p_local, p_tmp)
+      p_local = np.reshape(p_local, (num_of_comp, num_of_comp, 2, 2, self.D))
+      num_of_comp = num_of_comp * 2
+      p_local = np.transpose(p_local, (0, 2, 1, 3, 4))
+      p_local = np.reshape(p_local, (num_of_comp*num_of_comp, self.D))
+
+    p_local = np.dot(p_local, v_right)
+    p_local = np.reshape(p_local, (num_of_comp, num_of_comp))
+
+    S = np.linalg.eigvals(p_local)
+    ans = 0.0
+
+    for i in range(len(S)):
+      ans = ans + S[i]*np.log(S[i])
+
+    return -ans
 
   def __decompose_L_2body_to_p(self, L):
     p1, S0, p2 = svd(L)
