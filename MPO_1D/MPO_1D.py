@@ -40,7 +40,8 @@ class MPO_1D:
         K_conjugate = np.conjugate(self.K_1body[0])
         K_dagger = np.conjugate(K_transpose)
         K1 = np.dot(K_dagger, self.K_1body[0])
-        K2 = np.dot(K_conjugate, K_transpose)
+        #K2 = np.dot(K_conjugate, K_transpose)
+        K2 = np.dot(K_transpose, K_conjugate)
 
         for i in range(2):
           for j in range(2):
@@ -236,6 +237,28 @@ class MPO_1D:
     #return np.trace(product_v).real
 
   def normalize(self):
+    leftover = np.identity(self.D, dtype=np.complex64)
+
+    for n in range(self.N):
+      p_set_tmp = np.dot(leftover, np.reshape(self.p_set[n], (self.D, 2*2*self.D)))
+      p_set_tmp = np.reshape(p_set_tmp, (self.D*2*2, self.D))
+      U, S, V = svd(p_set_tmp, full_matrices=False)
+      self.p_set[n] = np.reshape(U, (self.D, 2, 2, self.D))
+      leftover = np.dot(np.diag(S), V)
+
+    for n_tmp in range(self.N-1):
+      n = self.N-1 - n_tmp
+      p_set_tmp = np.dot(np.reshape(self.p_set[n], (self.D*2*2, self.D)), leftover)
+      p_set_tmp = np.reshape(p_set_tmp, (self.D, 2*2*self.D))
+      U, S, V = svd(p_set_tmp, full_matrices=False)
+      S1 = np.diag(np.power(S, n/(n+1.0)))
+      S2 = np.diag(np.power(S, 1.0/(n+1.0)))
+      self.p_set[n] = np.reshape(np.dot(S2, V), (self.D, 2, 2, self.D))
+      leftover = np.dot(U, S1)
+
+    p_set_tmp = np.dot(np.reshape(self.p_set[0], (self.D*2*2, self.D)), leftover)
+    self.p_set[0] = np.reshape(p_set_tmp, (self.D, 2, 2, self.D))
+
     p_trace = self.trace_of_density_matrix()
     p_trace = np.power(p_trace, 1.0/self.N)
     self.p_set = self.p_set/p_trace
@@ -447,7 +470,7 @@ class MPO_1D:
     p_local = np.dot(p_local, v_right)
     p_local = np.reshape(p_local, (num_of_comp, num_of_comp))
 
-    S = np.linalg.eigvals(p_local)
+    S = np.linalg.eigvalsh(p_local)
     ans = 0.0
 
     for i in range(len(S)):
@@ -456,7 +479,7 @@ class MPO_1D:
     return -ans
 
   def __decompose_L_2body_to_p(self, L):
-    p1, S0, p2 = svd(L)
+    p1, S0, p2 = svd(L, full_matrices=False)
     ## svds have bad precision
 
     p1 = p1[:,:self.D]
@@ -472,7 +495,7 @@ class MPO_1D:
     return p1, p2
 
   def __decompose_L_3body_to_p(self, L):
-    p1, S0, L2 = svd(L)
+    p1, S0, L2 = svd(L, full_matrices=False)
     ## svds have bad precision
 
     p1 = p1[:,:self.D]
