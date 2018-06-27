@@ -40,7 +40,6 @@ class MPO_1D:
         K_conjugate = np.conjugate(self.K_1body[0])
         K_dagger = np.conjugate(K_transpose)
         K1 = np.dot(K_dagger, self.K_1body[0])
-        #K2 = np.dot(K_conjugate, K_transpose)
         K2 = np.dot(K_transpose, K_conjugate)
 
         for i in range(2):

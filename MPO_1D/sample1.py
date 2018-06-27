@@ -143,8 +143,9 @@ class density_matrix_time_evolution:
 
   def update(self):
     diff = -1j*(np.dot(self.Hamiltonian, self.density_matrix) - np.dot(self.density_matrix, self.Hamiltonian))
-    diff = diff + self.coef*self.coef*(np.dot(self.K1, np.dot(self.density_matrix, self.K1_dagger)) - np.dot(self.K1K1, self.density_matrix) - np.dot(self.density_matrix, self.K1K1))
-    diff = diff + self.coef*self.coef*(np.dot(self.K2, np.dot(self.density_matrix, self.K2_dagger)) - np.dot(self.K2K2, self.density_matrix) - np.dot(self.density_matrix, self.K2K2))
+    diff = diff + self.coef*self.coef*(np.dot(self.K1, np.dot(self.density_matrix, self.K1_dagger)) - 0.5*np.dot(self.K1K1, self.density_matrix) - 0.5*np.dot(self.density_matrix, self.K1K1))
+    diff = diff + self.coef*self.coef*(np.dot(self.K2, np.dot(self.density_matrix, self.K2_dagger)) - 0.5*np.dot(self.K2K2, self.density_matrix) - 0.5*np.dot(self.density_matrix, self.K2K2))
+    diff = diff + self.coef*self.coef*(np.dot(self.K3, np.dot(self.density_matrix, self.K3_dagger)) - 0.5*np.dot(self.K3K3, self.density_matrix) - 0.5*np.dot(self.density_matrix, self.K3K3))
     self.density_matrix = self.density_matrix + diff*T_delta
     self.normalize()
 
