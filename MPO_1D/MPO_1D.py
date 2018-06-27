@@ -226,7 +226,7 @@ class MPO_1D:
             v_set[p_num][D1][D2] = v_set[p_num][D1][D2] + self.p_set[p_num][D1][i][i][D2]
 
     v_left  = copy.deepcopy(self.left_edge_vector)
-    product_v = np.zeros((self.D, self.D), dtype=np.complex64)
+    #product_v = np.zeros((self.D, self.D), dtype=np.complex64)
     for p_num in range(self.N):
       v_left = np.dot(v_left, v_set[p_num])
     #for p_num in range(self.N-1):
